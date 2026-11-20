@@ -1,0 +1,15 @@
+[package]
+name = "diskost-proto"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "JSON messages shared by every Diskost client"
+
+[dependencies]
+chrono = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+serde_json = "1"

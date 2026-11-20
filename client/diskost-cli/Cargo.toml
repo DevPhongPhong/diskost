@@ -1,0 +1,19 @@
+[package]
+name = "diskost-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Terminal client for a Diskost meeting"
+
+[[bin]]
+name = "diskost"
+path = "src/main.rs"
+
+[dependencies]
+diskost-core = { path = "../diskost-core" }
+diskost-media = { path = "../diskost-media" }
+diskost-proto = { path = "../diskost-proto" }
+env_logger = "0.11"
+log = "0.4"
+tokio = { version = "1", features = ["io-util", "macros", "rt-multi-thread", "sync"] }

@@ -1,0 +1,16 @@
+[package]
+name = "diskost-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Async Diskost meeting client"
+
+[dependencies]
+diskost-proto = { path = "../diskost-proto" }
+futures-util = "0.3"
+log = "0.4"
+serde_json = "1"
+thiserror = "1"
+tokio = { version = "1", features = ["macros", "net", "rt", "sync", "time"] }
+tokio-tungstenite = { version = "0.26", features = ["connect"] }

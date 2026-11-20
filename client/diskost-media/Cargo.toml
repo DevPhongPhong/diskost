@@ -1,0 +1,16 @@
+[package]
+name = "diskost-media"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Mesh WebRTC data channels for Diskost desktop clients"
+
+[dependencies]
+diskost-core = { path = "../diskost-core" }
+diskost-proto = { path = "../diskost-proto" }
+log = "0.4"
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "sync", "time"] }
+# 0.17 is the classic async API. 0.21 rewrote the surface and is not a drop-in.
+webrtc = "=0.17.3"

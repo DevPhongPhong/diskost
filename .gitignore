@@ -1,0 +1,10 @@
+/server/build/
+/client/target/
+**/*.rs.bk
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+*.user
+.idea/
+.vscode/
