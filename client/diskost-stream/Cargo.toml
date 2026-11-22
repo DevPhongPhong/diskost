@@ -1,0 +1,19 @@
+[package]
+name = "diskost-stream"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Capture devices, compress, encrypt, and send Diskost recordings over UDP"
+
+[features]
+default = []
+capture = ["dep:cpal", "dep:nokhwa", "dep:xcap"]
+
+[dependencies]
+chacha20poly1305 = { version = "0.11", features = ["getrandom"] }
+log = "0.4"
+lz4_flex = "0.14"
+cpal = { version = "0.18", optional = true }
+nokhwa = { version = "0.10.11", optional = true, default-features = false, features = ["input-native"] }
+xcap = { version = "0.4.1", optional = true }

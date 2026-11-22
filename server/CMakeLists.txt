@@ -12,6 +12,7 @@ add_library(diskost_server STATIC
   src/sha1.cpp
   src/net.cpp
   src/ws.cpp
+  src/record.cpp
   src/server.cpp
 )
 target_include_directories(diskost_server PUBLIC include)

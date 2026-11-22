@@ -8,7 +8,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <signal.h>
+#include <csignal>
 #include <unistd.h>
 #else
 #include <mstcpip.h>

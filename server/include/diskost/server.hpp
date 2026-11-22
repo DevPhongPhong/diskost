@@ -16,6 +16,7 @@ struct ServerConfig {
   int max_rooms = 1000;
   std::size_t max_message_bytes = 1 << 20;
   bool verbose = false;
+  std::uint16_t udp_port = 0;
   std::vector<std::string> ice_servers{"stun:stun.l.google.com:19302"};
 };
 
@@ -31,6 +32,9 @@ class MeetingServer {
   void serve(const std::string& host, std::uint16_t port);
   void request_stop();
   std::uint16_t bound_port() const { return bound_port_.load(); }
+  std::uint16_t bound_udp_port() const { return bound_udp_port_.load(); }
+  // Datagrams stored for this room and participant. Bad magic is not counted.
+  std::size_t recorded_count(const std::string& room, const std::string& participant) const;
 
  private:
   struct Impl;
@@ -38,6 +42,7 @@ class MeetingServer {
   ServerConfig config_;
   std::unique_ptr<Impl> impl_;
   std::atomic<std::uint16_t> bound_port_{0};
+  std::atomic<std::uint16_t> bound_udp_port_{0};
   std::atomic<bool> stop_{false};
 };
 

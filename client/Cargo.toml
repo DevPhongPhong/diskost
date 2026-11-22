@@ -4,6 +4,7 @@ members = [
     "diskost-proto",
     "diskost-core",
     "diskost-media",
+    "diskost-stream",
     "diskost-cli",
     "diskost-desktop",
 ]

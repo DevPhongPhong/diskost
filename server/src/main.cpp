@@ -11,7 +11,7 @@ namespace {
 void usage() {
   std::cerr
       << "diskost-server — meeting signaling server\n"
-      << "Usage: diskost-server [--host 0.0.0.0] [--port 7880]\n"
+      << "Usage: diskost-server [--host 0.0.0.0] [--port 7880] [--udp-port 7881]\n"
       << "                      [--max-participants 16] [--max-rooms 1000]\n"
       << "                      [--stun URL] [--no-stun] [--verbose]\n"
       << "\n"
@@ -25,6 +25,7 @@ int main(int argc, char** argv) {
   std::string host = "0.0.0.0";
   int port = 7880;
   diskost::ServerConfig config;
+  config.udp_port = 7881;
   bool stun_set = false;
   std::vector<std::string> stun;
 
@@ -44,6 +45,13 @@ int main(int argc, char** argv) {
       host = need("--host");
     } else if (arg == "--port") {
       port = std::stoi(need("--port"));
+    } else if (arg == "--udp-port") {
+      const int udp = std::stoi(need("--udp-port"));
+      if (udp < 0 || udp > 65535) {
+        std::cerr << "invalid udp port\n";
+        return 2;
+      }
+      config.udp_port = static_cast<std::uint16_t>(udp);
     } else if (arg == "--max-participants") {
       config.max_participants = std::stoi(need("--max-participants"));
     } else if (arg == "--max-rooms") {

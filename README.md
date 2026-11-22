@@ -37,6 +37,7 @@ On Windows, if `g++` is the MinGW compiler from MSYS2, `scripts/build-server.ps1
 ```text
 diskost-server [--host 0.0.0.0] [--port 7880]
                [--max-participants 16] [--stun stun:host:3478]
+               [--udp-port 7881]
                [--no-stun] [--verbose]
 ```
 
@@ -54,7 +55,15 @@ cargo run -p diskost-cli -- --user Alice create --name Daily
 cargo run -p diskost-cli -- --user Bob join --room AB12CD34
 ```
 
-`diskost-desktop` is the same binary on Windows, macOS, and Linux. Rendering is immediate-mode egui on an OpenGL context (`eframe` glow). It opens a WebRTC data channel to every other person so you can see the peer link come up (`linked`). Microphone, camera, and screen toggles update presence for the room. Encoded media frames attach to the same peer connection in `client/diskost-media`.
+`diskost-desktop` is the same binary on Windows, macOS, and Linux. Rendering is immediate-mode egui on an OpenGL context (`eframe` glow). It opens a WebRTC data channel to every other person so you can see the peer link come up (`linked`). Microphone, camera, and screen toggles update presence for the room. Encoded media frames attach to the same peer connection in `client/diskost-media`. A second path in `client/diskost-stream` records a copy: the desktop **Device test** panel opens the display, microphone, speaker, and webcam on this machine. **Show screen** paints the latest display frame in the window. **Test mic** plays the microphone through the selected speaker. Both stay live and report `live` / `stalled` or `hearing` / `no signal`.
+
+That recording does not replace the WebRTC call. After you join a room, turning on Mic or Screen also compresses the raw samples, encrypts them with a process-local key (ChaCha20-Poly1305, not stored in the repo), and sends datagrams to the server on UDP port 7881 (`--udp-port`). The server keeps the ciphertext. It does not decode it.
+
+The capture build needs development headers that are not part of the runtime libraries. On Linux:
+
+```bash
+sudo apt install libasound2-dev libv4l-dev libxcb-randr0-dev libxcb-shm0-dev libdbus-1-dev libclang-dev pkg-config
+```
 
 If `link.exe` is not installed (no Visual Studio Build Tools), use the GNU host toolchain and put MinGW `g++` on `PATH`:
 
@@ -81,6 +90,7 @@ Terminal commands while you are in a room: `/audio`, `/video`, `/screen`, `/peer
 | `client/diskost-proto` | JSON messages |
 | `client/diskost-core` | Async WebSocket client |
 | `client/diskost-media` | Desktop WebRTC mesh (webrtc 0.17) |
+| `client/diskost-stream` | Device capture, compress, encrypt, UDP recording |
 | `client/diskost-cli` | Terminal client |
 | `client/diskost-desktop` | Windows, macOS, and Linux UI (winit + egui + OpenGL) |
 
@@ -90,3 +100,4 @@ Terminal commands while you are in a room: `/audio`, `/video`, `/screen`, `/peer
 2. Bob joins. Both clients receive the roster and the STUN URL list.
 3. The client with the greater participant id creates the WebRTC offer. The other answers. ICE candidates are relayed one by one.
 4. Chat and mute flags go through the server, so they work even when a peer link is still connecting.
+5. If Mic or Screen is on, the desktop also sends a compressed encrypted copy of that media to the server over UDP. WebRTC remains the live call.

@@ -14,6 +14,7 @@ path = "src/main.rs"
 diskost-core = { path = "../diskost-core" }
 diskost-media = { path = "../diskost-media" }
 diskost-proto = { path = "../diskost-proto" }
+diskost-stream = { path = "../diskost-stream", features = ["capture"] }
 # Native GPU UI: winit window + glow/OpenGL. No WebView, DOM, or HTML renderer.
 eframe = { version = "0.31.1", default-features = false, features = ["default_fonts", "glow", "persistence", "wayland", "x11"] }
 env_logger = "0.11"

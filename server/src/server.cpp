@@ -1,6 +1,7 @@
 #include "diskost/server.hpp"
 
 #include "diskost/json.hpp"
+#include "diskost/record.hpp"
 #include "diskost/ws.hpp"
 
 #include <algorithm>
@@ -352,6 +353,7 @@ struct MeetingServer::Impl {
   std::atomic<bool>* stop = nullptr;
   std::atomic<std::uint16_t>* bound_port = nullptr;
   TcpListener listener;
+  UdpRecorder recorder;
   std::mutex mu;
   std::condition_variable wait_cv;
   std::mutex wait_mu;
@@ -716,6 +718,7 @@ void MeetingServer::request_stop() {
   stop_.store(true);
   if (impl_) {
     impl_->listener.close();
+    impl_->recorder.request_stop();
     impl_->close_all_sessions();
   }
 }
@@ -724,7 +727,10 @@ void MeetingServer::serve(const std::string& host, std::uint16_t port) {
   stop_.store(false);
   impl_->listener.listen_on(host, port);
   bound_port_.store(impl_->listener.port());
-  log_line("info", "listening on " + host + ":" + std::to_string(bound_port_.load()));
+  impl_->recorder.start(host, config_.udp_port, &stop_);
+  bound_udp_port_.store(impl_->recorder.port());
+  log_line("info", "listening on " + host + ":" + std::to_string(bound_port_.load()) + " udp " +
+                       std::to_string(bound_udp_port_.load()));
   while (!stop_.load()) {
     const socket_t fd = impl_->listener.accept_one();
     if (fd == kInvalidSocket) {
@@ -744,10 +750,17 @@ void MeetingServer::serve(const std::string& host, std::uint16_t port) {
     impl_->spawn(session);
   }
   impl_->close_all_sessions();
+  impl_->recorder.join();
+  bound_udp_port_.store(0);
   std::unique_lock<std::mutex> lock(impl_->wait_mu);
   impl_->wait_cv.wait(lock, [&] { return impl_->active.load() == 0; });
   bound_port_.store(0);
   log_line("info", "stopped");
+}
+
+std::size_t MeetingServer::recorded_count(const std::string& room, const std::string& participant) const {
+  if (!impl_) return 0;
+  return impl_->recorder.count(room, participant);
 }
 
 }  // namespace diskost

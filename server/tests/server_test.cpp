@@ -3,8 +3,14 @@
 #include "diskost/server.hpp"
 #include "diskost/ws.hpp"
 
+#ifndef _WIN32
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#endif
+
 #include <chrono>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -240,12 +246,53 @@ void test_meeting() {
   thread.join();
 }
 
+void test_udp_record() {
+  diskost::ServerConfig config;
+  config.udp_port = 0;
+  diskost::MeetingServer server(std::move(config));
+  std::thread thread([&server] { server.serve("127.0.0.1", 0); });
+  for (int i = 0; i < 50 && server.bound_udp_port() == 0; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+  expect(server.bound_udp_port() != 0, "udp port is bound");
+
+  const std::uint8_t good[] = {'D', 'K', 'S', 'T', 1, 1, 3, 7, 0, 0, 0, 0xe8, 3, 0, 0, 0, 0, 0, 0,
+                                7, 0, 0, 0, 0, 0, 1, 0, 2, 'A', 'B', 2, 'p', '1', 1, 2, 3};
+  std::uint8_t bad[sizeof(good)];
+  std::memcpy(bad, good, sizeof(good));
+  bad[0] = 'X';
+
+  const diskost::socket_t fd = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  expect(fd != diskost::kInvalidSocket, "udp socket");
+  sockaddr_in addr{};
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(server.bound_udp_port());
+  expect(inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr) == 1, "udp address");
+  expect(::sendto(fd, reinterpret_cast<const char*>(bad), static_cast<int>(sizeof(bad)), 0,
+                  reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == static_cast<int>(sizeof(bad)),
+         "send bad magic");
+  expect(::sendto(fd, reinterpret_cast<const char*>(good), static_cast<int>(sizeof(good)), 0,
+                  reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == static_cast<int>(sizeof(good)),
+         "send recording");
+  diskost::close_socket(fd);
+
+  for (int i = 0; i < 50 && server.recorded_count("AB", "p1") == 0; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  }
+  expect(server.recorded_count("AB", "p1") == 1, "valid datagram stored once");
+  expect(server.recorded_count("nope", "p1") == 0, "unknown room stays empty");
+
+  server.request_stop();
+  thread.join();
+}
+
 }  // namespace
 
 int main() {
   try {
     test_crypto_and_json();
     test_meeting();
+    test_udp_record();
   } catch (const std::exception& ex) {
     std::cerr << "FAIL " << ex.what() << "\n";
     return 1;
